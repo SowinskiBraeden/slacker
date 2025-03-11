@@ -162,10 +162,10 @@ def main() -> None:
     data = {
       "Rank": [],
       "Author": [],
-      "Commits": [],
       "Added": [],
       "Deleted": [],
       "Actual": [],
+      "Commits": [],
     }
 
     rank = 0
@@ -188,10 +188,10 @@ def main() -> None:
     data = {
       "Rank": [],
       "Author": [],
-      "Commits": [],
       "Added": [],
       "Deleted": [],
       "Actual": [],
+      "Commits": [],
     }
 
     rank = 0
@@ -214,10 +214,10 @@ def main() -> None:
     data = {
       "Rank": [],
       "Author": [],
-      "Commits": [],
       "Added": [],
       "Deleted": [],
       "Actual": [],
+      "Commits": [],
     }
 
     rank = 0
@@ -238,9 +238,10 @@ def main() -> None:
   data = {
     "Rank": [],
     "Author": [],
-    "Actual": [],
     "Added": [],
     "Deleted": [],
+    "Actual": [],
+    "Commits": [],
   }
   
   rank = 0
@@ -251,6 +252,7 @@ def main() -> None:
     data["Actual"].append(str(author["contributed"]))
     data["Added"].append(f"+{author['added']}")
     data["Deleted"].append(f"-{author['deleted']}")
+    data["Commits"].append(str(author['commits']))
 
   pretty_table(data, "TopContributorsAllTime")
 

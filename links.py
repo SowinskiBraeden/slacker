@@ -1,4 +1,3 @@
-
 from typing import List
 
 urls: List[str] = [

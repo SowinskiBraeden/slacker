@@ -33,7 +33,7 @@ async def getInsights(repoURL: str, attempt: int = 0) -> Dict[str, str|None] | N
         return None
       if resp.status == 202 and attempt <= MAX_RETRY:
         # print(f"{repo} Was queried, but no data was received")
-        time.sleep(10)
+        time.sleep(15)
         attempt += 1
         team = await getInsights(repoURL, attempt)
         return team

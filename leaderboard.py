@@ -3,6 +3,7 @@ from typing import List, Dict
 import json
 from prettytable import PrettyTable
 import os, shutil
+from datetime import datetime
 
 def pretty_table(dct: Dict, title: str, add: str=""):
   table = PrettyTable()
@@ -10,18 +11,20 @@ def pretty_table(dct: Dict, title: str, add: str=""):
      table.add_column(c, [])
   table.add_row(['\n'.join(dct[c]) for c in dct.keys()])
   table.align = "l"
-  with open(f"./tables/{title}.txt", "a") as file:
+  with open(f"./boards/{title}.txt", "a") as file:
     if add != "":
       file.write(f"{add}\n")
     file.write(table.__str__())
     file.write("\n\n")
-  # print(table)
+
+  # with open(f"./boards/{title}", "ab") as file:
+  #   pickle.dump(dct, file)
 
 def setupDir() -> None:
-  if not os.path.exists("./tables"): 
-    os.makedirs("./tables") 
+  if not os.path.exists("./boards"): 
+    os.makedirs("./boards") 
 
-  folder = './tables'
+  folder = './boards'
   for filename in os.listdir(folder):
     file_path = os.path.join(folder, filename)
     try:
@@ -33,6 +36,8 @@ def setupDir() -> None:
       print('Failed to delete %s. Reason: %s' % (file_path, e))
 
 def main() -> None:
+  date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+
   teams: List[Dict[str, str|List]] = {}
   with open("teams.json", "r") as file:
     teams = json.load(file)
@@ -115,7 +120,7 @@ def main() -> None:
       data["Team"].append(project["team"])
       data["Size"].append(str(project["size"]))
 
-    pretty_table(data, "LargestProjectsPerCampus", f"{campus} Campus")
+    pretty_table(data, "LargestProjectsPerCampus", f"{campus} Campus - Updated at {date}")
 
   # Largest project per set
   for set in projects_per_set:
@@ -134,7 +139,7 @@ def main() -> None:
       data["Team"].append(project["team"])
       data["Size"].append(str(project["size"]))
 
-    pretty_table(data, "LargestProjectPerSet", f"Set {set}")
+    pretty_table(data, "LargestProjectPerSet", f"Set {set} - Updated at {date}")
 
   # Largest project of all
   filtered = sorted(projects_all_time, key=lambda d: d['size'], reverse=True)
@@ -152,7 +157,7 @@ def main() -> None:
     data["Team"].append(project["team"])
     data["Size"].append(str(project["size"]))
 
-  pretty_table(data, "LargestProjectAllTeams")
+  pretty_table(data, "LargestProjectAllTeams", f"Updated at {date}")
 
 
   # Contributors ranker per campus
@@ -178,7 +183,7 @@ def main() -> None:
       data["Deleted"].append(f"-{author['deleted']}")
       data["Actual"].append(str(author['contributed']))
 
-    pretty_table(data, "TopContributorPerCampus", f"{campus} Campus")
+    pretty_table(data, "TopContributorPerCampus", f"{campus} Campus - Updated at {date}")
 
 
   # Contributors ranked per set
@@ -204,7 +209,7 @@ def main() -> None:
       data["Deleted"].append(f"-{author['deleted']}")
       data["Actual"].append(str(author['contributed']))
 
-    pretty_table(data, "TopContributorPerSet", f"Set {set}")
+    pretty_table(data, "TopContributorPerSet", f"Set {set} - Updated at {date}")
 
 
   # Contributors ranked per Team
@@ -230,7 +235,7 @@ def main() -> None:
       data["Deleted"].append(f"-{author['deleted']}")
       data["Actual"].append(str(author['contributed']))
 
-    pretty_table(data, "TopContributorsPerTeam", project)
+    pretty_table(data, "TopContributorsPerTeam", f"{project} - Updated at {date}");
 
   # Contributors ranked all time
   contributors_all_time = sorted(contributors_all_time, key=lambda d: d['added'], reverse=True)
@@ -254,7 +259,7 @@ def main() -> None:
     data["Deleted"].append(f"-{author['deleted']}")
     data["Commits"].append(str(author['commits']))
 
-  pretty_table(data, "TopContributorsAllTime")
+  pretty_table(data, "TopContributorsAllTime", f"Updated at {date}")
 
 if __name__ == "__main__":
   setupDir()

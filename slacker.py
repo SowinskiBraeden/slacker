@@ -23,3 +23,6 @@ def index() -> str:
 def loadBoard(boardID: str) -> str:
   path = os.path.join(root_dir(), f"boards/{boardID}.txt")
   return Response(get_file(path), mimetype="text/plain")
+
+if __name__ == "__main__":
+  app.run(host="0.0.0.0")

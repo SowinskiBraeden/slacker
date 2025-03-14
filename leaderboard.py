@@ -5,20 +5,21 @@ from prettytable import PrettyTable
 import os, shutil
 from datetime import datetime
 
-def pretty_table(dct: Dict, title: str, add: str=""):
+def pretty_table(dct: Dict, title: str, add: str="") -> None:
   table = PrettyTable()
+
   for c in dct.keys():
-     table.add_column(c, [])
+    table.add_column(c, [])
+
   table.add_row(['\n'.join(dct[c]) for c in dct.keys()])
   table.align = "l"
+
   with open(f"./boards/{title}.txt", "a") as file:
     if add != "":
       file.write(f"{add}\n")
+
     file.write(table.__str__())
     file.write("\n\n")
-
-  # with open(f"./boards/{title}", "ab") as file:
-  #   pickle.dump(dct, file)
 
 def setupDir() -> None:
   if not os.path.exists("./boards"): 

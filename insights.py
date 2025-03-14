@@ -16,8 +16,6 @@ async def getInsights(repoURL: str, attempt: int = 0) -> Dict[str, str|None] | N
   owner: str = repoURL.split("/")[3]
   repo: str = repoURL.split("/")[4]
 
-  # print(f"Querying {repo}")
-
   query: str = f"https://api.github.com/repos/{owner}/{repo}/stats/contributors"
   headers: Dict[str, str] = {
     "Accept": "application/vnd.github+json",
@@ -27,12 +25,9 @@ async def getInsights(repoURL: str, attempt: int = 0) -> Dict[str, str|None] | N
 
   async with aiohttp.ClientSession() as session:
     async with session.get(query, headers=headers, timeout=5) as resp:
-      # print(f"   {urls.index(repoURL) + 1}/{len(urls)} - {resp.status}")
       if resp.status > 400:
-        # print(f"An Error Occured Querying {repo}")
         return None
       if resp.status == 202 and attempt <= MAX_RETRY:
-        # print(f"{repo} Was queried, but no data was received")
         time.sleep(15)
         attempt += 1
         team = await getInsights(repoURL, attempt)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from typing import List, Dict
-import json
+
+# Only ever really needs to be run one time
 
 def getSet(team: str) -> str:
   team = team.upper()

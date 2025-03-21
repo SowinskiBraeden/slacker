@@ -60,8 +60,11 @@ async def getInsights(repoURL: str, attempt: int = 0) -> Dict[str, str|None] | N
 
 async def main() -> None:
   teamsOriginal: List[Dict] = []
-  with open("teams.json", "r") as file:
-    teamsOriginal = json.load(file)
+  try:
+    with open("teams.json", "r") as file:
+      teamsOriginal = json.load(file)
+  except FileNotFoundError:
+    pass
 
   teams: List[Dict] = []
 

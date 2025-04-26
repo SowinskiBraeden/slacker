@@ -1,5 +1,6 @@
 __pycache__/*
-teams.json
-key.py
 boards/*
 venv/*
+repos/*
+urls.json
+teams.json

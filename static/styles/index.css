@@ -1,0 +1,91 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700;800&display=swap");
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, segoe ui, Roboto, Oxygen, Ubuntu, Cantarell, open sans, helvetica neue, sans-serif;
+  padding: 0pt;
+  margin: 0pt;
+}
+
+.title {
+  font-size: 40px;
+}
+
+.main {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 25%;
+  height: auto;
+  padding: 24pt;
+  border-radius: 24px;
+  justify-content: center;
+  text-align: left;
+}
+
+ul li {
+  margin-bottom: 12pt;
+}
+
+.link {
+  font-size: 30px;
+  font-weight: 300;
+}
+
+.flex-container-c {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.flex-container-r {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
+
+footer {
+  width: 100vw;
+  position: fixed;
+  bottom: 0%;
+  left: 0%;
+  background-color: #aaaaaa;
+  display: flex;
+  justify-content: space-between;
+  transition: .8s;
+  padding: 8pt;
+}
+
+footer a {
+  font-size: 20px;
+  font-weight: 600;
+  font-style: normal;
+  text-decoration: underline;
+  color: black
+}
+      
+footer p {
+  margin-top: 16pt;
+}
+
+.social-icons {
+  padding: 12pt 0;
+}
+
+.social-icons a:not(:last-of-type) {
+  margin-inline-end: 12pt;
+}
+
+.social-icons a svg {
+  height: 26pt;
+  width: 26pt;
+}
+
+.social-icons a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.icon {
+  transition: 0.8s;
+}

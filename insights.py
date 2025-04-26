@@ -1,100 +1,188 @@
 #!/usr/bin/env python3
-from links import urls
 from typing import List, Dict
+from json import JSONDecodeError
 import json
 import asyncio
-import aiohttp
-import time
-from tqdm import tqdm
+import os
+import subprocess
+import shutil
 
-from parse import parse
-from key import token
+IGNORED: List[str] = [
+  "node_modules/",
+  ".min.",
+  "bootstrap/",
+  ".history/",
+]
 
-MAX_RETRY: int = 5
+urls: Dict[str, str] = {}
+with open("urls.json", "r") as file:
+  urls = json.load(file)
 
-async def getInsights(repoURL: str, attempt: int = 0) -> Dict[str, str|None] | None:
-  owner: str = repoURL.split("/")[3]
-  repo: str = repoURL.split("/")[4]
+def setupDir(directory: str) -> None:
+  folder = f'./{directory}'
+  if not os.path.exists(folder):
+    os.makedirs(folder) 
 
-  query: str = f"https://api.github.com/repos/{owner}/{repo}/stats/contributors"
-  headers: Dict[str, str] = {
-    "Accept": "application/vnd.github+json",
-    "Authorization": f"Bearer {token}",
-    "X-GitHub-Api-Version": "2022-11-28" 
+  for filename in os.listdir(folder):
+    file_path = os.path.join(folder, filename)
+    try:
+      if os.path.isfile(file_path) or os.path.islink(file_path):
+        os.unlink(file_path)
+      elif os.path.isdir(file_path):
+        shutil.rmtree(file_path)
+    except Exception as e:
+      print('Failed to delete %s. Reason: %s' % (file_path, e))
+
+
+async def getInsights(repoURL: str, teamID: str) -> Dict[str, str|List]:
+  repo: str = repoURL.split("/")[4].split(".git")[0]
+
+  execDir: str = f"{os.getcwd()}/repos"
+  repoDir: str = f"{execDir}/{repo}"
+
+  clear: List[str] = ["rm", "-rf", repo]
+  clone: List[str] = ["git", "clone", repoURL] 
+  audit: List[str] = ["git", "log", "--stat"]
+
+  subprocess.run(clear, cwd=execDir)
+  subprocess.run(clone, cwd=execDir)
+
+  with open(f"{repoDir}/audit.txt", "w") as auditFile:
+    subprocess.run(audit, cwd=repoDir, stdout=auditFile, text=True)
+
+  team: Dict[str, str|List] = {
+    "team": teamID,
+    "contributors": []
   }
 
-  async with aiohttp.ClientSession() as session:
-    async with session.get(query, headers=headers, timeout=5) as resp:
-      if resp.status > 400:
-        return None
-      if resp.status == 202 and attempt <= MAX_RETRY:
-        time.sleep(15)
-        attempt += 1
-        team = await getInsights(repoURL, attempt)
-        return team
-      elif attempt > MAX_RETRY: return None
+  with open(f"{repoDir}/audit.txt", "r") as auditFile:
+    lines = auditFile.readlines()
 
-      team: Dict[str, str|List] = {
-        "repo": repoURL,
-        "team": repo,
-        "contributors": []
-      }
-      
-      data: List[Dict[str, any]] = await resp.json()
+    authorStats: Dict[str, str|int] | None = None
 
-      for contributor in data:
-        newContributor: Dict[str, str|int] = {
-          "author": contributor["author"]["login"],
-          "commits": contributor["total"],
-          "added": 0,
-          "deleted": 0
-        }
+    for i in range(len(lines)):
+      line: str = lines[i].replace("\n", "")
+      if "Author: " in line:
+        author = line.split("Author: ")[1].split(" <")[0]
+        email = line.split("<")[1].split(">")[0].lower()
 
-        for week in contributor["weeks"]:
-          newContributor["added"] += week["a"]
-          newContributor["deleted"] += week["d"]
+        found: bool = False
+        for authorStat in team["contributors"]:
+          if found: break
+          if authorStat["author"] == author or authorStat["email"] == email:
+            authorStats = authorStat
+            team["contributors"].remove(authorStat)
+            found = True
 
-        team["contributors"].append(newContributor)
+        if not found and "@users.noreply.github.com" in email: continue
+
+        if not found:
+          authorStats = {
+            "email": email,
+            "author": author,
+            "commits": 0,
+            "added": 0,
+            "deleted": 0
+          }
+
+        if "Merge: " in lines[i - 1]:
+          authorStats["commits"] += 1
+          team["contributors"].append(authorStats)
+          continue
+
+        offset: int = i + 5
+        done: bool = False
+
+        while not done:
+          if "files changed," in lines[offset] or "file changed," in lines[offset]:
+            done = True
+            break
+
+          ignore: bool = False
+          for IGNORE in IGNORED:
+            if IGNORE in lines[offset]:
+              ignore = True
+              break
+
+          if ignore:
+            offset += 1
+            continue
+
+          if " | " not in lines[offset]:
+            offset += 1
+            continue
+
+          if "Bin 0 -> " in lines[offset]:
+            offset += 1
+            continue
+
+          fileDiffNum: int = 0
+          try:
+            fileDiffNum = int(list(filter(None, lines[offset].split("|")[1].split(" ")))[0])
+          except ValueError:
+            offset += 1
+            continue
+
+          if fileDiffNum == 0:
+            offset += 1
+            continue
+
+          ratioString: str = list(filter(None, lines[offset].split("|")[1].split(" ")))[1].replace("\n", "")
+
+          numAdd: int = ratioString.count("+")
+          numDel: int = ratioString.count("-")
+
+          added:   int = round((numAdd / len(ratioString)) * fileDiffNum)
+          deleted: int = round((numDel / len(ratioString)) * fileDiffNum)
+
+          authorStats["added"] += added
+          authorStats["deleted"] += deleted
+
+          offset += 1
+
+        authorStats["commits"] += 1
+        team["contributors"].append(authorStats)
 
   return team
 
 async def main() -> None:
-  teamsOriginal: List[Dict] = []
+  teamsOrigin: List[Dict] = []
   try:
     with open("teams.json", "r") as file:
-      teamsOriginal = json.load(file)
-  except FileNotFoundError:
+      teamsOrigin = json.load(file)
+  except (FileNotFoundError, JSONDecodeError):
     pass
-
+  
   teams: List[Dict] = []
 
-  for i in tqdm(range(len(urls)),
-                desc="Reading Insights",
-                ascii=False, ncols=75):
-    url = urls[i]
-    team: Dict[str, str|List] = await getInsights(url)
+  for teamID in urls:
+    if urls[teamID] == "": continue
+    team: Dict[str, str|List] | None = None
+    try:
+      team = await getInsights(urls[teamID], teamID)
+    except Exception:
+      pass
     if team is not None:
       teams.append(team)
-    time.sleep(5)
 
   print(f"Completed {len(teams)}/{len(urls)}")
 
-  # Parse gets Campus, Set, and Team ID
-  teams = parse(teams)
-
-  for originalTeam in teamsOriginal:
-    originalTeamID = originalTeam["id"]
+  # If failed to get new team data, populate with old team data
+  for original in teamsOrigin:
+    originalID = original["team"]
     exists: bool = False
     for team in teams:
-      if team["id"] == originalTeamID:
+      if team["team"] == originalID:
         exists = True
         break
-
+    
     if not exists:
-      teams.append(originalTeam)
+      teams.append(original)
 
   with open("teams.json", "w") as file:
     json.dump(teams, file, indent=2)
 
 if __name__ == "__main__":
+  setupDir("repos")
+  setupDir("boards")
   asyncio.run(main())

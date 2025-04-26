@@ -1,267 +1,222 @@
 #!/usr/bin/env python3
 from typing import List, Dict
 import json
-from prettytable import PrettyTable
-import os, shutil
 from datetime import datetime
 
-def pretty_table(dct: Dict, title: str, add: str="") -> None:
-  table = PrettyTable()
-
-  for c in dct.keys():
-    table.add_column(c, [])
-
-  table.add_row(['\n'.join(dct[c]) for c in dct.keys()])
-  table.align = "l"
-
-  with open(f"./boards/{title}.txt", "a") as file:
-    if add != "":
-      file.write(f"{add}\n")
-
-    file.write(table.__str__())
-    file.write("\n\n")
-
-def setupDir() -> None:
-  if not os.path.exists("./boards"): 
-    os.makedirs("./boards") 
-
-  folder = './boards'
-  for filename in os.listdir(folder):
-    file_path = os.path.join(folder, filename)
-    try:
-      if os.path.isfile(file_path) or os.path.islink(file_path):
-        os.unlink(file_path)
-      elif os.path.isdir(file_path):
-        shutil.rmtree(file_path)
-    except Exception as e:
-      print('Failed to delete %s. Reason: %s' % (file_path, e))
-
-def main() -> None:
+# This is sooooo poorly written with this dumb structure but oh well
+def generateLeaderboards(teams: List[Dict]) -> None:
   date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
-  teams: List[Dict[str, str|List]] = {}
-  with open("teams.json", "r") as file:
-    teams = json.load(file)
+  # Empty leaderboard structures
+  projects_per_campus: Dict[str, List] = {
+    "title": "Largest Project per Campus",
+    "boards": [
+      {
+        "title": "Burnaby Campus",
+        "headers": [
+          "Rank",
+          "Team",
+          "Size",
+          "Commits"
+        ],
+        "entries": []
+      },
+      {
+        "title": "Downtown Campus",
+        "headers": [
+          "Rank",
+          "Team",
+          "Size",
+          "Commits"
+        ],
+        "entries": []
+      }  
+    ],
+    "updatedAt": date
+  }
+  projects_all_time: Dict[str, List] = {
+    "title": "Largets Project of All",
+    "boards": [
+      {
+        "title": "",
+        "headers": [
+          "Rank",
+          "Team",
+          "Size",
+          "Commits"
+        ],
+        "entries": []
+      }
+    ],
+    "updatedAt": date
+  }
+  contributors_per_campus: Dict[str, List] = {
+    "title": "Top Contributor per Campus",
+    "boards": [
+      {
+        "title": "Burnaby Campus",
+        "headers": [
+          "Rank",
+          "Author",
+          "Added",
+          "Deleted",
+          "Actual",
+          "Commits"
+        ],
+        "entries": []
+      },
+      {
+        "title": "Downtown Campus",
+        "headers": [
+          "Rank",
+          "Author",
+          "Added",
+          "Deleted",
+          "Actual",
+          "Commits"
+        ],
+        "entries": []
+      }
+    ],
+    "updatedAt": date
+  }
+  contributors_per_project: Dict[str, List] = {
+    "title": "Top Contributor per Project",
+    "boards": [], # Generated later
+    "updatedAt": date
+  }
+  tracked_teams: int = 0
+  teams_in_project: Dict[str, int] = {} # keep track of teams added to contributors_per_project
+  contributors_all_time: Dict[str, List] = {
+    "title": "Top Contributor of All",
+    "boards": [
+      {
+        "title": "",
+        "headers": [
+          "Rank",
+          "Author",
+          "Added",
+          "Deleted",
+          "Actual",
+          "Commits"
+        ],
+        "entries": []
+      }
+    ],
+    "updatedAt": date
+  }
 
-  projects_per_campus = {
-    "Burnaby": [],
-    "Downtown": []
-  }
-  projects_per_set = {
-    "A": [],
-    "B": [],
-    "C": [],
-    "D": [],
-    "E": [],
-    "F": []
-  }
-  projects_all_time = []
-  contributors_per_campus = {
-    "Burnaby": [],
-    "Downtown": []
-  }
-  contributors_per_set = {
-    "A": [],
-    "B": [],
-    "C": [],
-    "D": [],
-    "E": [],
-    "F": []
-  }
-  contributors_per_project = {}
-  contributors_all_time = []
+  # === Populate leaderboards === #
   for team in teams:
     added, deleted, commits = 0, 0, 0
     for author in team["contributors"]:
-      added += author["added"]
+      added   += author["added"]
       deleted += author["deleted"]
       commits += author["commits"]
 
-      author["contributed"] = author["added"] - author["deleted"]
+      author["actual"] = author["added"] - author["deleted"]
+
+      authorEntry: List[any] = [
+        None, author["author"], author["added"], author["deleted"], author["actual"], author["commits"]
+      ]
+
+      campus: int = 0 if "BBY" in team["team"] else 1
+      contributors_per_campus["boards"][campus]["entries"].append(authorEntry)
       
-      contributors_per_campus[team["campus"]].append(author)
-      contributors_per_set[team["set"]].append(author)
+      if team["team"] not in teams_in_project:
+        teams_in_project[team["team"]] = tracked_teams
+        tracked_teams += 1
+        contributors_per_project["boards"].append({
+          "title": team["team"],
+          "headers": [
+            "Rank",
+            "Author",
+            "Added",
+            "Deleted",
+            "Actual",
+            "Commits"
+          ],
+          "entries": []
+        })
 
-      if team["id"] not in contributors_per_project:
-        contributors_per_project[team["id"]] = []
-      contributors_per_project[team["id"]].append(author)
+      contributors_per_project["boards"][teams_in_project[team["team"]]]["entries"].append(authorEntry)
 
-      contributors_all_time.append(author)
+      contributors_all_time["boards"][0]["entries"].append(authorEntry)
 
     size = added - deleted
 
-    project = {
-      "team": team["id"],
-      "size": size,
-      "added": added,
-      "deleted": deleted,
-      "commits": commits
-    }
-
-    projects_per_campus[team["campus"]].append(project)
-    projects_per_set[team["set"]].append(project)
-    projects_all_time.append(project)
-
-  #######################################################################
-
-  # Largest project per campus
-  for campus in projects_per_campus:        
-    filtered = sorted(projects_per_campus[campus], key=lambda d: d['size'], reverse=True)
+    projectEntry: List[str|int] = [
+      None,
+      team["team"],
+      size,
+      commits
+    ]
     
-    data = {
-      "Rank": [],
-      "Team": [],
-      "Size": []
-    }
+    campus: int = 0 if "BBY" in team["team"] else 1
+    projects_per_campus["boards"][campus]["entries"].append(projectEntry)
+    projects_all_time["boards"][0]["entries"].append(projectEntry)
 
-    rank = 0
-    for project in filtered:
-      rank += 1
-      data["Rank"].append(str(rank))
-      data["Team"].append(project["team"])
-      data["Size"].append(str(project["size"]))
 
-    pretty_table(data, "LargestProjectsPerCampus", f"{campus} Campus - Updated at {date}")
+    # === Sort leaderboards and write to JSON === #
 
-  # Largest project per set
-  for set in projects_per_set:
-    filtered = sorted(projects_per_set[set], key=lambda d: d['size'], reverse=True)
+    # Project per Campus
+    for campus in range(len(projects_per_campus["boards"])):
+      filtered = sorted(projects_per_campus["boards"][campus]["entries"], key=lambda e: e[2], reverse=True)
+      for i in range(len(filtered)):
+        filtered[i][0] = i + 1
+
+      projects_per_campus["boards"][campus]["entries"] = filtered
+
+    with open("boards/LargestProjectsPerCampus.json", "w") as file:
+      json.dump(projects_per_campus, file, indent=2)
+
+    # Projects all time
+    filtered = sorted(projects_all_time["boards"][0]["entries"], key=lambda e: e[2], reverse=True)
+    for i in range(len(filtered)):
+      filtered[i][0] = i + 1
+
+    projects_all_time["boards"][0]["entries"] = filtered
+
+    with open("boards/LargestProjectAllTeams.json", "w") as file:
+      json.dump(projects_all_time, file, indent=2)
+
+    # Contributor per Campus
+    for campus in range(len(contributors_per_campus["boards"])):
+      filtered = sorted(contributors_per_campus["boards"][campus]["entries"], key=lambda e: e[2], reverse=True)
+      for i in range(len(filtered)):
+        filtered[i][0] = i + 1
     
-    data = {
-      "Rank": [],
-      "Team": [],
-      "Size": []
-    }
+      contributors_per_campus["boards"][campus]["entries"] = filtered
 
-    rank = 0
-    for project in filtered:
-      rank += 1
-      data["Rank"].append(str(rank))
-      data["Team"].append(project["team"])
-      data["Size"].append(str(project["size"]))
+    with open("boards/TopContributorPerCampus.json", "w") as file:
+      json.dump(contributors_per_campus, file, indent=2)
 
-    pretty_table(data, "LargestProjectPerSet", f"Set {set} - Updated at {date}")
+    # Contributor per Project
+    for project in range(len(contributors_per_project["boards"])):
+      filtered = sorted(contributors_per_project["boards"][project]["entries"], key=lambda e: e[2], reverse=True)
+      for i in range(len(filtered)):
+        filtered[i][0] = i + 1
 
-  # Largest project of all
-  filtered = sorted(projects_all_time, key=lambda d: d['size'], reverse=True)
-  
-  data = {
-    "Rank": [],
-    "Team": [],
-    "Size": []
-  }
+      contributors_per_project["boards"][project]["entries"] = filtered
 
-  rank = 0
-  for project in filtered:
-    rank += 1
-    data["Rank"].append(str(rank))
-    data["Team"].append(project["team"])
-    data["Size"].append(str(project["size"]))
+    with open("boards/TopContributorsPerTeam.json", "w") as file:
+      json.dump(contributors_per_project, file, indent=2)
 
-  pretty_table(data, "LargestProjectAllTeams", f"Updated at {date}")
+    # Contributor all time
+    filtered = sorted(contributors_all_time["boards"][0]["entries"], key=lambda e: e[2], reverse=True)
+    for i in range(len(filtered)):
+      filtered[i][0] = i + 1
 
+    contributors_all_time["boards"][0]["entries"] = filtered
 
-  # Contributors ranker per campus
-  for campus in contributors_per_campus:
-    filtered = sorted(contributors_per_campus[campus], key=lambda d: d['added'], reverse=True)
-    
-    data = {
-      "Rank": [],
-      "Author": [],
-      "Added": [],
-      "Deleted": [],
-      "Actual": [],
-      "Commits": [],
-    }
+    with open("boards/TopContributorsAllTime.json", "w") as file:
+      json.dump(contributors_all_time, file, indent=2)
 
-    rank = 0
-    for author in filtered:
-      rank += 1
-      data["Rank"].append(str(rank))
-      data["Author"].append(author['author'])
-      data["Commits"].append(str(author['commits']))
-      data["Added"].append(f"+{author['added']}")
-      data["Deleted"].append(f"-{author['deleted']}")
-      data["Actual"].append(str(author['contributed']))
+def main() -> None:
+  with open("teams.json", "r") as file:
+    teams: List[Dict] = json.load(file)
 
-    pretty_table(data, "TopContributorPerCampus", f"{campus} Campus - Updated at {date}")
-
-
-  # Contributors ranked per set
-  for set in contributors_per_set:
-    filtered = sorted(contributors_per_set[set], key=lambda d: d['added'], reverse=True)
-    
-    data = {
-      "Rank": [],
-      "Author": [],
-      "Added": [],
-      "Deleted": [],
-      "Actual": [],
-      "Commits": [],
-    }
-
-    rank = 0
-    for author in filtered:
-      rank += 1
-      data["Rank"].append(str(rank))
-      data["Author"].append(author['author'])
-      data["Commits"].append(str(author['commits']))
-      data["Added"].append(f"+{author['added']}")
-      data["Deleted"].append(f"-{author['deleted']}")
-      data["Actual"].append(str(author['contributed']))
-
-    pretty_table(data, "TopContributorPerSet", f"Set {set} - Updated at {date}")
-
-
-  # Contributors ranked per Team
-  for project in contributors_per_project:
-    filtered = sorted(contributors_per_project[project], key=lambda d: d['added'], reverse=True)
-
-    data = {
-      "Rank": [],
-      "Author": [],
-      "Added": [],
-      "Deleted": [],
-      "Actual": [],
-      "Commits": [],
-    }
-
-    rank = 0
-    for author in filtered:
-      rank += 1
-      data["Rank"].append(str(rank))
-      data["Author"].append(author['author'])
-      data["Commits"].append(str(author['commits']))
-      data["Added"].append(f"+{author['added']}")
-      data["Deleted"].append(f"-{author['deleted']}")
-      data["Actual"].append(str(author['contributed']))
-
-    pretty_table(data, "TopContributorsPerTeam", f"{project} - Updated at {date}");
-
-  # Contributors ranked all time
-  contributors_all_time = sorted(contributors_all_time, key=lambda d: d['added'], reverse=True)
-  
-  data = {
-    "Rank": [],
-    "Author": [],
-    "Added": [],
-    "Deleted": [],
-    "Actual": [],
-    "Commits": [],
-  }
-  
-  rank = 0
-  for author in contributors_all_time:
-    rank += 1
-    data["Rank"].append(str(rank))
-    data["Author"].append(author['author'])
-    data["Actual"].append(str(author["contributed"]))
-    data["Added"].append(f"+{author['added']}")
-    data["Deleted"].append(f"-{author['deleted']}")
-    data["Commits"].append(str(author['commits']))
-
-  pretty_table(data, "TopContributorsAllTime", f"Updated at {date}")
+  generateLeaderboards(teams)
 
 if __name__ == "__main__":
-  setupDir()
   main()

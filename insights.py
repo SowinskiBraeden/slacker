@@ -12,7 +12,11 @@ IGNORED: List[str] = [
   ".min.",
   "bootstrap/",
   ".history/",
-]
+  "package-lock.json",
+  "/@",
+  "eslint-plugin",
+  "...", # It is possible someone has so many sub folders and such a long file name it gets ignored
+]        # git log --stat kinda sucks that it doesnt always show the full folder path
 
 urls: Dict[str, str] = {}
 with open("urls.json", "r") as file:

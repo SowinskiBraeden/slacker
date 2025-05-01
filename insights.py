@@ -14,6 +14,9 @@ IGNORED: List[str] = [
   ".history/",
   "package-lock.json",
   "/@",
+  "yarn.lock",
+  ".lock",
+  ".yml",
   "eslint-plugin",
   ".geojson", # Group has thousands of data points in a .geojson file
   "...", # It is possible someone has so many sub folders and such a long file name it gets ignored

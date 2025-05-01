@@ -15,6 +15,7 @@ IGNORED: List[str] = [
   "package-lock.json",
   "/@",
   "eslint-plugin",
+  ".geojson", # Group has thousands of data points in a .geojson file
   "...", # It is possible someone has so many sub folders and such a long file name it gets ignored
 ]        # git log --stat kinda sucks that it doesnt always show the full folder path
 

@@ -15,6 +15,8 @@ IGNORED: List[str] = [
   "package-lock.json",
   "/@",
   "eslint-plugin",
+  ".yy", 
+  "Ladder2800.js", # BBY06 - Auto generated code detected. please dont rename this file at all.
   "...", # It is possible someone has so many sub folders and such a long file name it gets ignored
 ]        # git log --stat kinda sucks that it doesnt always show the full folder path
 
@@ -116,7 +118,7 @@ async def getInsights(repoURL: str, teamID: str) -> Dict[str, str|List]:
             offset += 1
             continue
 
-          if "Bin 0 -> " in lines[offset]:
+          if "Bin" in lines[offset] and "bytes" in lines[offset] and "->" in lines[offset]:
             offset += 1
             continue
 

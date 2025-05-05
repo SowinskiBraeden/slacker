@@ -14,9 +14,13 @@ IGNORED: List[str] = [
   ".history/",
   "package-lock.json",
   "/@",
+  "yarn.lock",
+  ".lock",
+  ".yml",
   "eslint-plugin",
   ".yy", 
   "Ladder2800.js", # BBY06 - Auto generated code detected. please dont rename this file at all.
+  ".geojson", # Group has thousands of data points in a .geojson file
   "...", # It is possible someone has so many sub folders and such a long file name it gets ignored
 ]        # git log --stat kinda sucks that it doesnt always show the full folder path
 

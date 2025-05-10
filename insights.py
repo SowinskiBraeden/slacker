@@ -10,6 +10,10 @@ import shutil
 IGNORED: List[str] = [
   "node_modules/",
   ".min.",
+  ".png",
+  ".jpg",
+  ".webp",
+  ".ico",
   "bootstrap/",
   ".history/",
   "package-lock.json",
@@ -122,7 +126,7 @@ async def getInsights(repoURL: str, teamID: str) -> Dict[str, str|List]:
             offset += 1
             continue
 
-          if "Bin" in lines[offset] and "bytes" in lines[offset] and "->" in lines[offset]:
+          if " Bin " in lines[offset] and " bytes" in lines[offset] and " -> " in lines[offset]:
             offset += 1
             continue
 

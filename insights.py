@@ -14,6 +14,7 @@ IGNORED: List[str] = [
   ".jpg",
   ".webp",
   ".ico",
+  ".svg",
   "bootstrap/",
   ".history/",
   "package-lock.json",

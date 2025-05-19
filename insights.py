@@ -12,9 +12,12 @@ IGNORED: List[str] = [
   ".min.",
   ".png",
   ".jpg",
+  ".jpeg",
   ".webp",
   ".ico",
   ".svg",
+  ".mp3",
+  ".mp4",
   "bootstrap/",
   ".history/",
   "package-lock.json",
@@ -25,6 +28,9 @@ IGNORED: List[str] = [
   "eslint-plugin",
   ".yy", 
   "lowercased-schools.json", # DTC-07 10k+ list of schools
+  "schools.json",
+  "school.json",
+  "cleaned-schools.json",
   "Ladder2800.js", # BBY06 - Auto generated code detected. please dont rename this file at all.
   ".geojson", # Group has thousands of data points in a .geojson file
   "...", # It is possible someone has so many sub folders and such a long file name it gets ignored

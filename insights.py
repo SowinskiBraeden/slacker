@@ -24,6 +24,7 @@ IGNORED: List[str] = [
   ".yml",
   "eslint-plugin",
   ".yy", 
+  "lowercased-schools.json", # DTC-07 10k+ list of schools
   "Ladder2800.js", # BBY06 - Auto generated code detected. please dont rename this file at all.
   ".geojson", # Group has thousands of data points in a .geojson file
   "...", # It is possible someone has so many sub folders and such a long file name it gets ignored
